@@ -1,25 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import * as k8s from '@kubernetes/client-node';
+import { KubeConfig, CoreV1Api, V1Namespace } from '@kubernetes/client-node';
 
 @Injectable()
 export class K8sService {
-  private k8sApi: k8s.CoreV1Api;
-  private kc: k8s.KubeConfig;
+  private k8sApi: CoreV1Api;
+  private kc: KubeConfig;
 
   onModuleInit() {
-    this.kc = new k8s.KubeConfig();
+    this.kc = new KubeConfig();
     this.kc.loadFromDefault();
-    this.k8sApi = this.kc.makeApiClient(k8s.CoreV1Api);
+    this.k8sApi = this.kc.makeApiClient(CoreV1Api);
   }
 
-  async createNamespace(name: string): Promise<k8s.V1Namespace> {
-    const namespace: k8s.V1Namespace = {
+  private buildNamespaceObject(name: string): V1Namespace {
+    return {
       metadata: {
         name,
       },
     };
+  }
 
-    const response = await this.k8sApi.createNamespace({ body: namespace });
+  async createNamespace(name: string): Promise<V1Namespace> {
+    /**
+     * TODO
+     * namespace naming rule validate
+     */
+    const namespaceObject = this.buildNamespaceObject(name);
+
+    const response = await this.k8sApi.createNamespace({
+      body: namespaceObject,
+    });
 
     return response;
   }
